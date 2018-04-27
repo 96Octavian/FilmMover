@@ -14,4 +14,116 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Origine.c">
+      <Filter>File di origine</Filter>
+    </ClCompile>
+    <ClCompile Include="useful.c">
+      <Filter>File di origine</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="libssh\agent.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\auth.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\bind.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\buffer.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\callbacks.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\channels.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\crypto.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\dh.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\kex.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\keyfiles.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\keys.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\legacy.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\libcrypto.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\libgcrypt.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\libssh.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\libsshpp.hpp">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\messages.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\misc.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\packet.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\pcap.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\pki.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\poll.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\priv.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\scp.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\server.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\session.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\sftp.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\socket.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\ssh1.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\ssh2.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\string.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\threads.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="libssh\wrapper.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="useful.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

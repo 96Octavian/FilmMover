@@ -115,6 +115,44 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Origine.c" />
+    <ClCompile Include="useful.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="libssh\agent.h" />
+    <ClInclude Include="libssh\auth.h" />
+    <ClInclude Include="libssh\bind.h" />
+    <ClInclude Include="libssh\buffer.h" />
+    <ClInclude Include="libssh\callbacks.h" />
+    <ClInclude Include="libssh\channels.h" />
+    <ClInclude Include="libssh\crypto.h" />
+    <ClInclude Include="libssh\dh.h" />
+    <ClInclude Include="libssh\kex.h" />
+    <ClInclude Include="libssh\keyfiles.h" />
+    <ClInclude Include="libssh\keys.h" />
+    <ClInclude Include="libssh\legacy.h" />
+    <ClInclude Include="libssh\libcrypto.h" />
+    <ClInclude Include="libssh\libgcrypt.h" />
+    <ClInclude Include="libssh\libssh.h" />
+    <ClInclude Include="libssh\libsshpp.hpp" />
+    <ClInclude Include="libssh\messages.h" />
+    <ClInclude Include="libssh\misc.h" />
+    <ClInclude Include="libssh\packet.h" />
+    <ClInclude Include="libssh\pcap.h" />
+    <ClInclude Include="libssh\pki.h" />
+    <ClInclude Include="libssh\poll.h" />
+    <ClInclude Include="libssh\priv.h" />
+    <ClInclude Include="libssh\scp.h" />
+    <ClInclude Include="libssh\server.h" />
+    <ClInclude Include="libssh\session.h" />
+    <ClInclude Include="libssh\sftp.h" />
+    <ClInclude Include="libssh\socket.h" />
+    <ClInclude Include="libssh\ssh1.h" />
+    <ClInclude Include="libssh\ssh2.h" />
+    <ClInclude Include="libssh\string.h" />
+    <ClInclude Include="libssh\threads.h" />
+    <ClInclude Include="libssh\wrapper.h" />
+    <ClInclude Include="useful.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
