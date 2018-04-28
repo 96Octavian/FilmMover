@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include "useful.h"
 #include <stdio.h>
-
 #include <errno.h>
 #include <string.h>
+
 int verify_knownhost(ssh_session session)
 {
 	int state, hlen;
