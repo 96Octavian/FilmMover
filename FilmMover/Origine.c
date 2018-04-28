@@ -1,12 +1,11 @@
-#include "libssh\libssh.h"
+#include "libssh/libssh.h"
 #include <stdlib.h>
 #include "useful.h"
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
 
-int verify_knownhost(ssh_session session)
-{
+int verify_knownhost(ssh_session session) {
 	int state, hlen;
 	unsigned char *hash = NULL;
 	char *hexa;
@@ -68,6 +67,80 @@ int verify_knownhost(ssh_session session)
 	return 0;
 }
 
+int scp_receive(ssh_session session, ssh_scp scp) {
+	int rc;
+	int size, mode;
+	char *filename, *buffer;
+	rc = ssh_scp_pull_request(scp);
+	if (rc != SSH_SCP_REQUEST_NEWFILE)
+	{
+		fprintf(stderr, "Error receiving information about file: %s\n",
+			ssh_get_error(session));
+		return SSH_ERROR;
+	}
+	size = ssh_scp_request_get_size(scp);
+	filename = strdup(ssh_scp_request_get_filename(scp));
+	mode = ssh_scp_request_get_permissions(scp);
+	printf("Receiving file %s, size %d, permisssions 0%o\n",
+		filename, size, mode);
+	free(filename);
+	buffer = malloc(size);
+	if (buffer == NULL)
+	{
+		fprintf(stderr, "Memory allocation error\n");
+		return SSH_ERROR;
+	}
+	ssh_scp_accept_request(scp);
+	rc = ssh_scp_read(scp, buffer, size);
+	if (rc == SSH_ERROR)
+	{
+		fprintf(stderr, "Error receiving file data: %s\n",
+			ssh_get_error(session));
+		free(buffer);
+		return rc;
+	}
+	printf("Done\n");
+	write(1, buffer, size);
+	free(buffer);
+	rc = ssh_scp_pull_request(scp);
+	if (rc != SSH_SCP_REQUEST_EOF)
+	{
+		fprintf(stderr, "Unexpected request: %s\n",
+			ssh_get_error(session));
+		return SSH_ERROR;
+	}
+	return SSH_OK;
+}
+
+int scp_read(ssh_session session) {
+	ssh_scp scp;
+	int rc;
+	scp = ssh_scp_new
+	(session, SSH_SCP_READ, "downloads/FilmMover/file.txt");
+	if (scp == NULL)
+	{
+		fprintf(stderr, "Error allocating scp session: %s\n",
+			ssh_get_error(session));
+		return SSH_ERROR;
+	}
+	rc = ssh_scp_init(scp);
+	if (rc != SSH_OK)
+	{
+		fprintf(stderr, "Error initializing scp session: %s\n",
+			ssh_get_error(session));
+		ssh_scp_free(scp);
+		return rc;
+	}
+	
+	if (scp_receive(session, scp) != SSH_OK) {
+		printf("Error: %s\n", ssh_get_error(session));
+	}
+
+	ssh_scp_close(scp);
+	ssh_scp_free(scp);
+	return SSH_OK;
+}
+
 int main()
 {
 	/* Initialize new SSH session */
@@ -123,6 +196,8 @@ int main()
 		ssh_free(my_ssh_session);
 		exit(-1);
 	}
+
+	scp_read(my_ssh_session);
 
 	ssh_disconnect(my_ssh_session);
 	ssh_free(my_ssh_session);
