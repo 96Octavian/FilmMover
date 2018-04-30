@@ -11,12 +11,27 @@
 #define MAX_XFER_BUF_SIZE 16384
 
 int verify_knownhost(ssh_session session) {
-	int state, hlen;
+	int state, hlen, rc;
 	unsigned char *hash = NULL;
 	char *hexa;
 	char buf[10];
+	ssh_key srv_pubkey;
+
 	state = ssh_is_server_known(session);
-	hlen = ssh_get_pubkey_hash(session, &hash);
+	rc = ssh_get_publickey(session, &srv_pubkey);
+	if (rc < 0) {
+		return -1;
+	}
+	rc = ssh_get_publickey_hash(srv_pubkey,
+		SSH_PUBLICKEY_HASH_SHA1,
+		&hash,
+		&hlen);
+	ssh_key_free(srv_pubkey);
+	if (rc < 0) {
+		return -1;
+	}
+
+
 	if (hlen < 0)
 		return -1;
 	switch (state)
