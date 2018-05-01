@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define MAX_XFER_BUF_SIZE 16384
+#define MAX_XFER_BUF_SIZE 32768
 
 int verify_knownhost(ssh_session session) {
 	int state, hlen, rc;
@@ -139,6 +139,8 @@ int scp_receive(ssh_session session, ssh_scp scp) {
 	puts("Done");
 
 	free(buffer);
+	close(fd);
+
 	rc = ssh_scp_pull_request(scp);
 	if (rc != SSH_SCP_REQUEST_EOF) {
 		fprintf(stderr, "Unexpected request: %s\n",
