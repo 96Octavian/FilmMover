@@ -90,6 +90,62 @@ int verify_knownhost(ssh_session session) {
 	return 0;
 }
 
+static int fetch_files(ssh_session session) {
+	int size;
+	char buffer[16384];
+	int mode;
+	char *filename;
+	int r;
+	ssh_scp scp = ssh_scp_new(session, SSH_SCP_READ | SSH_SCP_RECURSIVE, "/tmp/libssh_tests/*");
+	if (ssh_scp_init(scp) != SSH_OK) {
+		fprintf(stderr, "error initializing scp: %s\n", ssh_get_error(session));
+		return -1;
+	}
+	printf("Trying to download 3 files (a,b,d) and 1 directory (c)\n");
+	do {
+
+		r = ssh_scp_pull_request(scp);
+		switch (r) {
+		case SSH_SCP_REQUEST_NEWFILE:
+			size = ssh_scp_request_get_size(scp);
+			filename = strdup(ssh_scp_request_get_filename(scp));
+			mode = ssh_scp_request_get_permissions(scp);
+			printf("downloading file %s, size %d, perms 0%o\n", filename, size, mode);
+			free(filename);
+			ssh_scp_accept_request(scp);
+			r = ssh_scp_read(scp, buffer, sizeof(buffer));
+			if (r == SSH_ERROR) {
+				fprintf(stderr, "Error reading scp: %s\n", ssh_get_error(session));
+				return -1;
+			}
+			printf("done\n");
+			break;
+		case SSH_ERROR:
+			fprintf(stderr, "Error: %s\n", ssh_get_error(session));
+			return -1;
+		case SSH_SCP_REQUEST_WARNING:
+			fprintf(stderr, "Warning: %s\n", ssh_scp_request_get_warning(scp));
+			break;
+		case SSH_SCP_REQUEST_NEWDIR:
+			filename = strdup(ssh_scp_request_get_filename(scp));
+			mode = ssh_scp_request_get_permissions(scp);
+			printf("downloading directory %s, perms 0%o\n", filename, mode);
+			free(filename);
+			ssh_scp_accept_request(scp);
+			break;
+		case SSH_SCP_REQUEST_ENDDIR:
+			printf("End of directory\n");
+			break;
+		case SSH_SCP_REQUEST_EOF:
+			printf("End of requests\n");
+			goto end;
+		}
+	} while (1);
+end:
+	return 0;
+}
+
+/* Copied from the tutorial but modified to write larger files */
 int scp_receive(ssh_session session, ssh_scp scp) {
 	int rc;
 	int size, mode, nwritten;
@@ -148,22 +204,17 @@ int scp_receive(ssh_session session, ssh_scp scp) {
 	free(buffer);
 	close(fd);
 
-	/* If there is no other pending data to be downloaded, we're ok */
-	rc = ssh_scp_pull_request(scp);
-	if (rc != SSH_SCP_REQUEST_EOF) {
-		fprintf(stderr, "Unexpected request: %s\n",
-			ssh_get_error(session));
-		return SSH_ERROR;
-	}
 	return SSH_OK;
 }
 
+/* Copied from the tutorial */
 int scp_read(ssh_session session) {
 	ssh_scp scp;
-	int rc;
+	char *filename;
+	int rc, mode;
 
 	/* Set SCP to read and provide file name */
-	scp = ssh_scp_new(session, SSH_SCP_READ, "downloads/FilmMover/test/file.txt");
+	scp = ssh_scp_new(session, SSH_SCP_READ | SSH_SCP_RECURSIVE, "downloads/FilmMover/test/");
 	if (scp == NULL)
 	{
 		fprintf(stderr, "Error allocating scp session: %s\n",
@@ -181,17 +232,51 @@ int scp_read(ssh_session session) {
 	}
 
 	/* Start reading */
-	if (scp_receive(session, scp) != SSH_OK) {
-		printf("Error: %s\n", ssh_get_error(session));
-	}
+	do {
+		rc = ssh_scp_pull_request(scp);
+		switch (rc) {
+		case SSH_SCP_REQUEST_NEWFILE:
+			if (scp_receive(session, scp) != SSH_OK) {
+				printf("Error: %s\n", ssh_get_error(session));
+			}
+			break;
+		case SSH_ERROR:
+			fprintf(stderr, "Error: %s\n", ssh_get_error(session));
+			break;
+		case SSH_SCP_REQUEST_WARNING:
+			fprintf(stderr, "Warning: %s\n", ssh_scp_request_get_warning(scp));
+			break;
+		case SSH_SCP_REQUEST_NEWDIR:
+			filename = strdup(ssh_scp_request_get_filename(scp));
+			mode = ssh_scp_request_get_permissions(scp);
+			printf("downloading directory %s, perms 0%o\n", filename, mode);
+			ssh_scp_accept_request(scp);
+			mkdir(filename, mode);
+			free(filename);
+			break;
+		case SSH_SCP_REQUEST_ENDDIR:
+			printf("End of directory\n");
+			chdir("..");
+			break;
+		}
+	} while (rc != SSH_SCP_REQUEST_EOF && rc != SSH_ERROR);
 
 	/* Close SCP channel */
 	ssh_scp_close(scp);
 	ssh_scp_free(scp);
-	return SSH_OK;
+
+	return rc;
 }
 
 int main() {
+
+	/* Change directory to Movies root */
+	// TODO: Error checking on chdir() and mkdir()
+	if (chdir("/media/family/EXT_TOSHIBA/Movies")) {
+		printf("Could not change directory");
+		exit(-1);
+	}
+
 	/* Initialize new SSH session */
 	ssh_session my_ssh_session = ssh_new();
 	if (my_ssh_session == NULL) {
@@ -238,7 +323,7 @@ int main() {
 	}
 
 	/* Start the SCP channel */
-	// TODO: Download entire folders and then remove copied files
+	// TODO: Remove copied files
 	scp_read(my_ssh_session);
 
 	/* Disconnect and close */
