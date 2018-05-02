@@ -18,9 +18,6 @@
     <ClCompile Include="Origine.c">
       <Filter>File di origine</Filter>
     </ClCompile>
-    <ClCompile Include="useful.c">
-      <Filter>File di origine</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libssh\agent.h">
@@ -120,9 +117,6 @@
       <Filter>File di intestazione</Filter>
     </ClInclude>
     <ClInclude Include="libssh\wrapper.h">
-      <Filter>File di intestazione</Filter>
-    </ClInclude>
-    <ClInclude Include="useful.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
   </ItemGroup>

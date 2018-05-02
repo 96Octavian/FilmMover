@@ -6,10 +6,11 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
+#include <linux/unistd.h>
 
 #define MAX_XFER_BUF_SIZE 32768
 
+/* Copied from the tutorial */
 int verify_knownhost(ssh_session session) {
 	int state, hlen, rc;
 	unsigned char *hash = NULL;
@@ -18,6 +19,8 @@ int verify_knownhost(ssh_session session) {
 	ssh_key srv_pubkey;
 
 	state = ssh_is_server_known(session);
+
+	/* Added this bit because ssh_get_pubkey_hash was deprecated */
 	rc = ssh_get_publickey(session, &srv_pubkey);
 	if (rc < 0) {
 		return -1;
@@ -92,6 +95,7 @@ int scp_receive(ssh_session session, ssh_scp scp) {
 	int size, mode, nwritten;
 	char *filename, *buffer;
 
+	/* Pull the pending request from remote host */
 	rc = ssh_scp_pull_request(scp);
 	if (rc != SSH_SCP_REQUEST_NEWFILE) {
 		fprintf(stderr, "Error receiving information about file: %s\n",
@@ -99,11 +103,13 @@ int scp_receive(ssh_session session, ssh_scp scp) {
 		return SSH_ERROR;
 	}
 
+	/* Get remote file attributes */
 	size = ssh_scp_request_get_size(scp);
 	filename = strdup(ssh_scp_request_get_filename(scp));
 	mode = ssh_scp_request_get_permissions(scp);
 	printf("Receiving file %s, size %d, permissions 0%o\n", filename, size, mode);
 
+	/* Allocate buffer for writing */
 	buffer = malloc(MAX_XFER_BUF_SIZE);
 	if (buffer == NULL) {
 		fprintf(stderr, "Memory allocation error\n");
@@ -120,7 +126,7 @@ int scp_receive(ssh_session session, ssh_scp scp) {
 		return SSH_ERROR;
 	}
 
-	puts("Receiving file...");
+	/* Receive file in MAX_XFER_BUF_SIZE chunks and write them every time */
 	while (size > 0) {
 		rc = ssh_scp_read(scp, buffer, MAX_XFER_BUF_SIZE);
 		if (rc == SSH_ERROR) {
@@ -136,11 +142,13 @@ int scp_receive(ssh_session session, ssh_scp scp) {
 		}
 		size -= nwritten;
 	}
-	puts("Done");
+	// TODO: Add some check to the file
 
+	/* Free buffer and close file */
 	free(buffer);
 	close(fd);
 
+	/* If there is no other pending data to be downloaded, we're ok */
 	rc = ssh_scp_pull_request(scp);
 	if (rc != SSH_SCP_REQUEST_EOF) {
 		fprintf(stderr, "Unexpected request: %s\n",
@@ -153,14 +161,16 @@ int scp_receive(ssh_session session, ssh_scp scp) {
 int scp_read(ssh_session session) {
 	ssh_scp scp;
 	int rc;
-	scp = ssh_scp_new
-	(session, SSH_SCP_READ, "downloads/FilmMover/test/file.txt");
+
+	/* Set SCP to read and provide file name */
+	scp = ssh_scp_new(session, SSH_SCP_READ, "downloads/FilmMover/test/file.txt");
 	if (scp == NULL)
 	{
 		fprintf(stderr, "Error allocating scp session: %s\n",
 			ssh_get_error(session));
 		return SSH_ERROR;
 	}
+
 	rc = ssh_scp_init(scp);
 	if (rc != SSH_OK)
 	{
@@ -169,10 +179,13 @@ int scp_read(ssh_session session) {
 		ssh_scp_free(scp);
 		return rc;
 	}
+
+	/* Start reading */
 	if (scp_receive(session, scp) != SSH_OK) {
 		printf("Error: %s\n", ssh_get_error(session));
 	}
 
+	/* Close SCP channel */
 	ssh_scp_close(scp);
 	ssh_scp_free(scp);
 	return SSH_OK;
@@ -214,19 +227,21 @@ int main() {
 	}
 
 	/* Authenticate to the server */
-	char *password = getpass("Password: ");
-	rc = ssh_userauth_password(my_ssh_session, NULL, password);
+	rc = ssh_userauth_publickey_auto(my_ssh_session, "octavian", NULL);	// Keys should be in ~/.ssh/
 	if (rc != SSH_AUTH_SUCCESS)
 	{
-		fprintf(stderr, "Error authenticating with password: %s\n",
+		fprintf(stderr, "Error authenticating with public key: %s\n",
 			ssh_get_error(my_ssh_session));
 		ssh_disconnect(my_ssh_session);
 		ssh_free(my_ssh_session);
 		exit(-1);
 	}
 
+	/* Start the SCP channel */
+	// TODO: Download entire folders and then remove copied files
 	scp_read(my_ssh_session);
 
+	/* Disconnect and close */
 	ssh_disconnect(my_ssh_session);
 	ssh_free(my_ssh_session);
 }
