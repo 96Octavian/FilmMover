@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <linux/unistd.h>
+#include <time.h>
 
 #define MAX_XFER_BUF_SIZE 32768
 
@@ -152,12 +153,12 @@ int scp_receive(ssh_session session, ssh_scp scp) {
 	char *filename, *buffer;
 
 	/* Pull the pending request from remote host */
-	rc = ssh_scp_pull_request(scp);
+	/*rc = ssh_scp_pull_request(scp);
 	if (rc != SSH_SCP_REQUEST_NEWFILE) {
 		fprintf(stderr, "Error receiving information about file: %s\n",
 			ssh_get_error(session));
 		return SSH_ERROR;
-	}
+	}*/
 
 	/* Get remote file attributes */
 	size = ssh_scp_request_get_size(scp);
@@ -214,7 +215,7 @@ int scp_read(ssh_session session) {
 	int rc, mode;
 
 	/* Set SCP to read and provide file name */
-	scp = ssh_scp_new(session, SSH_SCP_READ | SSH_SCP_RECURSIVE, "downloads/FilmMover/test/");
+	scp = ssh_scp_new(session, SSH_SCP_READ | SSH_SCP_RECURSIVE, "/media/Kodak/transmission/completi/Movies");
 	if (scp == NULL)
 	{
 		fprintf(stderr, "Error allocating scp session: %s\n",
@@ -251,14 +252,22 @@ int scp_read(ssh_session session) {
 			mode = ssh_scp_request_get_permissions(scp);
 			printf("downloading directory %s, perms 0%o\n", filename, mode);
 			ssh_scp_accept_request(scp);
-			mkdir(filename, mode);
+			if (mkdir(filename, mode) != 0 && errno != EEXIST) {
+				printf("Cannot create dir: %s\n", strerror(errno));
+				rc = SSH_ERROR;
+			}
+			if (chdir(filename)) {
+				printf("Could not change directory: %s\n", strerror(errno));
+				rc = SSH_ERROR;
+			}
 			free(filename);
 			break;
 		case SSH_SCP_REQUEST_ENDDIR:
 			printf("End of directory\n");
 			chdir("..");
-			break;
+			/* I'm a one step closer to the edge, I'm about to... */ break;
 		}
+		sleep(1);
 	} while (rc != SSH_SCP_REQUEST_EOF && rc != SSH_ERROR);
 
 	/* Close SCP channel */
@@ -270,10 +279,11 @@ int scp_read(ssh_session session) {
 
 int main() {
 
+	// TODO: prevent system shutdown while running
+
 	/* Change directory to Movies root */
-	// TODO: Error checking on chdir() and mkdir()
-	if (chdir("/media/family/EXT_TOSHIBA/Movies")) {
-		printf("Could not change directory");
+	if (chdir("/media/Kodak/")) {
+		printf("Could not change directory: %s\n", strerror(errno));
 		exit(-1);
 	}
 
@@ -329,4 +339,5 @@ int main() {
 	/* Disconnect and close */
 	ssh_disconnect(my_ssh_session);
 	ssh_free(my_ssh_session);
+	return 0;
 }
