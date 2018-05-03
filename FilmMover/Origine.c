@@ -8,12 +8,14 @@
 #include <sys/stat.h>
 #include <linux/unistd.h>
 #include <time.h>
+#include <mntent.h>
 
 #define MAX_XFER_BUF_SIZE 32768
 
 /* Copied from the tutorial */
 int verify_knownhost(ssh_session session) {
-	int state, hlen, rc;
+	int state, rc;
+	size_t hlen;
 	unsigned char *hash = NULL;
 	char *hexa;
 	char buf[10];
@@ -152,34 +154,30 @@ int scp_receive(ssh_session session, ssh_scp scp) {
 	int size, mode, nwritten;
 	char *filename, *buffer;
 
-	/* Pull the pending request from remote host */
-	/*rc = ssh_scp_pull_request(scp);
-	if (rc != SSH_SCP_REQUEST_NEWFILE) {
-		fprintf(stderr, "Error receiving information about file: %s\n",
-			ssh_get_error(session));
-		return SSH_ERROR;
-	}*/
-
 	/* Get remote file attributes */
 	size = ssh_scp_request_get_size(scp);
 	filename = strdup(ssh_scp_request_get_filename(scp));
 	mode = ssh_scp_request_get_permissions(scp);
 	printf("Receiving file %s, size %d, permissions 0%o\n", filename, size, mode);
 
-	/* Allocate buffer for writing */
-	buffer = malloc(MAX_XFER_BUF_SIZE);
-	if (buffer == NULL) {
-		fprintf(stderr, "Memory allocation error\n");
+	int fd = open(filename, O_CREAT | O_WRONLY | O_EXCL, mode);
+	free(filename);
+	if (fd < 0) {
+		if (errno == EEXIST) {
+			/* the file already existed */
+			puts("The file already exists");
+			return ssh_scp_deny_request(scp, "Already Exists");
+		}
+		fprintf(stderr, "Can't open file for writing: %s\n", strerror(errno));
 		return SSH_ERROR;
 	}
 
 	ssh_scp_accept_request(scp);
 
-	int fd = open(filename, O_CREAT | O_WRONLY, mode);
-	free(filename);
-	if (fd < 0) {
-		fprintf(stderr, "Can't open file for writing: %s\n",
-			strerror(errno));
+	/* Allocate buffer for writing */
+	buffer = malloc(MAX_XFER_BUF_SIZE);
+	if (buffer == NULL) {
+		fprintf(stderr, "Memory allocation error\n");
 		return SSH_ERROR;
 	}
 
@@ -277,12 +275,36 @@ int scp_read(ssh_session session) {
 	return rc;
 }
 
+int is_mounted(char * dev_path) {
+
+	FILE * mtab = NULL;
+	struct mntent * part = NULL;
+	int is_mounted = 0;
+
+	if ((mtab = setmntent("/etc/mtab", "r")) != NULL) {
+		while ((part = getmntent(mtab)) != NULL) {
+			if ((part->mnt_dir != NULL) && (strcmp(part->mnt_dir, dev_path)) == 0) {
+				is_mounted = 1;
+				break;
+			}
+		}
+		endmntent(mtab);
+	}
+
+	return is_mounted;
+}
+
 int main() {
 
 	// TODO: prevent system shutdown while running
 
+	if (!(is_mounted("/media/family/EXT_TOSHIBA"))) {
+		puts("Device not mounted");
+		exit(-1);
+	}
+
 	/* Change directory to Movies root */
-	if (chdir("/media/Kodak/")) {
+	if (chdir("/media/family/EXT_TOSHIBA")) {
 		printf("Could not change directory: %s\n", strerror(errno));
 		exit(-1);
 	}
@@ -312,6 +334,7 @@ int main() {
 		ssh_free(my_ssh_session);
 		exit(-1);
 	}
+
 
 	/* Verify the server identity */
 	if (verify_knownhost(my_ssh_session) < 0)
